@@ -52,7 +52,10 @@ from being unlocked. As a second line, the `TangNewClient` alert fires when an
 address unlocks with a Tang server for the first time: expected when you add a
 client; otherwise, investigate that address.
 
-**Tang servers**, after editing `config/tang-keyctl.conf`:
+
+**Tang servers**
+
+Please edit `config/tang-keyctl.conf` to specify the URL the client uses to contact this tang server, then:
 
 ```bash
 install -m 0700 tang-keyctl.py /usr/local/sbin/tang-keyctl
@@ -67,9 +70,15 @@ The rotate timer fires on January 15. **Required on the second server:** move it
 servers never retire keys together:
 
 ```ini
+
+### Editing /etc/systemd/system/tang-keyctl-rotate.timer.d/override.conf
+### Anything between here and the comment below will become the contents of the drop-in file
+
 [Timer]
 OnCalendar=
 OnCalendar=*-07-15 03:00:00
+
+### Edits below this comment will be discarded
 ```
 
 **Clients:**
