@@ -1,0 +1,12 @@
+[Unit]
+Description=Keep Clevis bindings on current Tang keys
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/clevis-rebind
+TimeoutStartSec=30min
+ProtectSystem=full
+ProtectHome=yes
+PrivateTmp=yes

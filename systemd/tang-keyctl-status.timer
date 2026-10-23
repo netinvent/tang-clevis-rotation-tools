@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh Tang key metrics
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Unit=tang-keyctl@status.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,12 @@
+[Unit]
+Description=Yearly Tang key rotation
+
+[Timer]
+# Use a different date on each Tang server (e.g. tang2: *-07-15 03:00:00)
+# so that both servers never rotate at the same time.
+OnCalendar=*-01-15 03:00:00
+Persistent=true
+Unit=tang-keyctl@rotate.service
+
+[Install]
+WantedBy=timers.target

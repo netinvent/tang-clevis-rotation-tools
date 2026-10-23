@@ -1,0 +1,11 @@
+[Unit]
+Description=Tang key management: %i
+After=tangd.socket
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tang-keyctl %i
+TimeoutStartSec=10min
+ProtectSystem=full
+ProtectHome=yes
+PrivateTmp=yes
