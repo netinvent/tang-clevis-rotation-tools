@@ -311,7 +311,7 @@ def main():
                                                 help=f"make the pending rotations urgent: no MIN_AGE_DAYS wait, "
                                                      f"QUIET_DAYS shortened to {RECENT_DAYS}, same client checks")
     commands.add_parser("status")
-    commands.add_parser("version").add_aergument("--version", action="store_true",
+    commands.add_parser("version").add_argument("--version", action="store_true",
                                                 help="Shows version and exits")
     forget_parser = commands.add_parser("forget")
     forget_parser.add_argument("--force", action="store_true", help="even if it unlocked recently (stolen)")
