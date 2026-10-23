@@ -1,0 +1,114 @@
+groups:
+  - name: nbde
+    rules:
+      # --- Tang servers -----------------------------------------------------
+      - alert: TangCommandFailed
+        expr: tang_keyctl_success == 0
+        labels: {severity: critical}
+        annotations:
+          summary: "tang-keyctl {{ $labels.command }} failed on {{ $labels.instance }}"
+          description: "See journalctl -u tang-keyctl@{{ $labels.command }}. A failed rotate stays failed until it is run again successfully."
+
+      - alert: TangStatusStale
+        expr: time() - tang_keyctl_timestamp_seconds{command="status"} > 1800
+        labels: {severity: warning}
+        annotations:
+          summary: "Tang metrics on {{ $labels.instance }} not refreshed for 30 minutes"
+
+      - alert: TangStatusMissing
+        expr: |
+          group by (url) (clevis_binding_kid)
+          unless on (url) group by (url) (tang_key_created_timestamp_seconds)
+        for: 1h
+        labels: {severity: warning}
+        annotations:
+          summary: "Clients are bound to {{ $labels.url }}, but no Tang server reports its keys"
+          description: "Check the tang-keyctl-status timer and node_exporter's textfile collector on that server, and that its TANG_URLS has this URL exactly as the bindings spell it."
+
+      - alert: TangAdvertisementBroken
+        expr: tang_advertisement_ok == 0
+        for: 15m
+        labels: {severity: critical}
+        annotations:
+          summary: "{{ $labels.url }} does not advertise the exchange keys found on disk"
+
+      - alert: TangRotationOverdue
+        expr: time() - max by (instance) (tang_key_created_timestamp_seconds{use="exc", state="active"}) > 400 * 86400
+        labels: {severity: warning}
+        annotations:
+          summary: "Tang keys on {{ $labels.instance }} are older than 400 days"
+
+      - alert: TangCleanupStuck
+        expr: time() - tang_rotation_pending_timestamp_seconds > 120 * 86400
+        labels: {severity: warning}
+        annotations:
+          summary: "Keys retired {{ $labels.rotated }} on {{ $labels.instance }} are still kept"
+          description: "Why: the dashboard's Pending cleanups table, or journalctl -u tang-keyctl@cleanup."
+
+      - alert: TangClientSilent
+        expr: time() - max by (instance, client) (tang_client_last_unlock_timestamp_seconds) > 2 * 86400
+        for: 1d
+        labels: {severity: warning}
+        annotations:
+          summary: "Client {{ $labels.client }} has not unlocked with {{ $labels.instance }} for 2 days"
+          description: "It blocks key cleanup. Check clevis-rebind there; if the client is gone for good: tang-keyctl forget {{ $labels.client }}"
+
+      - alert: TangClientOnRetiredKey
+        expr: |
+          tang_client_last_unlock_timestamp_seconds{key="retired"}
+          > on (instance) group_left () (max by (instance) (tang_rotation_pending_timestamp_seconds) + 2 * 86400)
+          and time() - tang_client_last_unlock_timestamp_seconds{key="retired"} < 2 * 86400
+        labels: {severity: warning}
+        annotations:
+          summary: "Client {{ $labels.client }} still unlocks with a retired key of {{ $labels.instance }}"
+          description: "It did not move to the new key within 2 days of the rotation: see journalctl -u clevis-rebind there."
+
+      - alert: TangNewClient
+        expr: time() - tang_client_first_unlock_timestamp_seconds < 86400
+        labels: {severity: warning}
+        annotations:
+          summary: "{{ $labels.client }} unlocked a disk with {{ $labels.instance }} for the first time"
+          description: "Expected when you add a client. Otherwise someone may be unlocking a disk that is not theirs: investigate this address."
+
+      # --- Clients ------------------------------------------------------------
+      - alert: ClevisRebindNotRunning
+        expr: time() - clevis_rebind_run_timestamp_seconds > 2 * 86400
+        for: 1h
+        labels: {severity: warning}
+        annotations:
+          summary: "clevis-rebind has not completed a run on {{ $labels.hostname }} for 2 days"
+          description: "Its disks are not tested nor moved to new Tang keys. Behind a NAT, the Tang servers cannot notice it themselves."
+
+      - alert: ClevisVolumeFailing
+        expr: clevis_volume_ok == 0
+        for: 2d
+        labels: {severity: warning}
+        annotations:
+          summary: "Volume {{ $labels.device }} on {{ $labels.hostname }} is failing"
+          description: "The reason is in the dashboard's Failing volumes table, and in journalctl -u clevis-rebind there."
+
+      - alert: ClevisBoundToUnknownKey
+        expr: |
+          (clevis_binding_kid unless on (url, kid) tang_key_created_timestamp_seconds)
+          and on (url) group by (url) (tang_key_created_timestamp_seconds)
+        for: 1h
+        labels: {severity: critical}
+        annotations:
+          summary: "{{ $labels.hostname }} is bound to a key that {{ $labels.url }} does not hold"
+          description: "The key was deleted too early, or the client was bound to a rogue Tang server."
+
+      - alert: LuksNoPassphrase
+        expr: |
+          group by (hostname, uuid) (luks_keyslot_changed_timestamp_seconds{kind="clevis"})
+          unless on (hostname, uuid) luks_keyslot_changed_timestamp_seconds{kind!="clevis"}
+        labels: {severity: warning}
+        annotations:
+          summary: "Volume {{ $labels.uuid }} on {{ $labels.hostname }} has no keyslot but Clevis ones"
+          description: "No emergency passphrase: should its Tang keys be lost, so is the volume. Add one with cryptsetup luksAddKey."
+
+      - alert: LuksPassphraseOld
+        expr: time() - luks_keyslot_changed_timestamp_seconds{kind="passphrase"} > 365 * 86400
+        labels: {severity: info}
+        annotations:
+          summary: "{{ $labels.hostname }} keyslot {{ $labels.slot }} unchanged for over a year"
+          description: "exact=0: the date is when tracking started, the key may be older."
