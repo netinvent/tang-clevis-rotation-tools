@@ -1,0 +1,1062 @@
+{
+  "title": "Network Boot Disk Encryption - Tang key rotation",
+  "uid": "nbde-tang-rotation",
+  "tags": [
+    "nbde",
+    "tang",
+    "clevis"
+  ],
+  "editable": true,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "label": "Prometheus",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0,
+        "refresh": 1
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Tang servers",
+      "collapsed": false,
+      "panels": [],
+      "id": 1,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Advertisement",
+      "description": "Each Tang server advertises exactly the exchange keys it holds.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "tang_advertisement_ok",
+          "legendFormat": "{{instance}}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "id": 2,
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Days since rotation",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(time() - max by (instance) (tang_key_created_timestamp_seconds{use=\"exc\", state=\"active\"})) / 86400",
+          "legendFormat": "{{instance}}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 365
+              },
+              {
+                "color": "red",
+                "value": 400
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "id": 3,
+      "gridPos": {
+        "x": 6,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Last commands",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "tang_keyctl_success",
+          "legendFormat": "{{instance}} {{command}}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "id": 4,
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Clients still on a retired key",
+      "description": "Clients that still unlock with a retired key 2 days after the rotation.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "count(tang_client_last_unlock_timestamp_seconds{key=\"retired\"} > on (instance) group_left () (max by (instance) (tang_rotation_pending_timestamp_seconds) + 2 * 86400) and time() - tang_client_last_unlock_timestamp_seconds{key=\"retired\"} < 2 * 86400) or vector(0)",
+          "legendFormat": "",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "id": 5,
+      "gridPos": {
+        "x": 18,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "table",
+      "title": "Pending cleanups",
+      "description": "Retired keys waiting for deletion, and what still blocks it.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(time() - tang_rotation_pending_timestamp_seconds) / 86400 * on (instance, rotation) group_left (blocked_by) tang_rotation_blocked_info or ((time() - tang_rotation_pending_timestamp_seconds) / 86400 unless on (instance, rotation) tang_rotation_blocked_info)",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "instance",
+                "rotated",
+                "urgent",
+                "blocked_by",
+                "Value"
+              ]
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true
+            },
+            "renameByName": {
+              "Value": "Days"
+            },
+            "indexByName": {
+              "instance": 0,
+              "rotated": 1,
+              "urgent": 2,
+              "blocked_by": 3,
+              "Value": 4
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Days",
+            "desc": true
+          }
+        ]
+      },
+      "id": 6,
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 14,
+        "h": 7
+      }
+    },
+    {
+      "type": "table",
+      "title": "Tang clients",
+      "description": "Days since each client last unlocked with the current key (a huge number: never). Over 2 blocks cleanup.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(time() - tang_client_last_unlock_timestamp_seconds{key=\"current\"}) / 86400",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "instance",
+                "client",
+                "Value"
+              ]
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true
+            },
+            "renameByName": {
+              "Value": "Days"
+            },
+            "indexByName": {
+              "instance": 0,
+              "client": 1,
+              "Value": 2
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Days",
+            "desc": true
+          }
+        ]
+      },
+      "id": 7,
+      "gridPos": {
+        "x": 14,
+        "y": 5,
+        "w": 10,
+        "h": 7
+      }
+    },
+    {
+      "type": "table",
+      "title": "Keys",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (instance, kid, use, state) ((time() - tang_key_created_timestamp_seconds{hash=\"sha256\"}) / 86400)",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "instance",
+                "use",
+                "state",
+                "kid",
+                "Value"
+              ]
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true
+            },
+            "renameByName": {
+              "Value": "Age (days)"
+            },
+            "indexByName": {
+              "instance": 0,
+              "use": 1,
+              "state": 2,
+              "kid": 3,
+              "Value": 4
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Age (days)",
+            "desc": true
+          }
+        ]
+      },
+      "id": 8,
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 7
+      }
+    },
+    {
+      "type": "row",
+      "title": "Clients",
+      "collapsed": false,
+      "panels": [],
+      "id": 9,
+      "gridPos": {
+        "x": 0,
+        "y": 19,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Clients reporting",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "count(time() - clevis_rebind_run_timestamp_seconds < 2 * 86400) or vector(0)",
+          "legendFormat": "",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "id": 10,
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Volumes",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "count(clevis_volume_ok) or vector(0)",
+          "legendFormat": "",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "id": 11,
+      "gridPos": {
+        "x": 6,
+        "y": 20,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Failing volumes",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "count(clevis_volume_ok == 0) or vector(0)",
+          "legendFormat": "",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "id": 12,
+      "gridPos": {
+        "x": 12,
+        "y": 20,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Bindings on retired keys",
+      "description": "Normal for a day after a rotation, until every client has rebound.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "count(clevis_binding_kid * on (url, kid) group_left () (0 * max by (url, kid) (tang_key_created_timestamp_seconds{state=\"retired\"}) + 1)) or vector(0)",
+          "legendFormat": "",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "id": 13,
+      "gridPos": {
+        "x": 18,
+        "y": 20,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "table",
+      "title": "Failing volumes",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "clevis_volume_problem_info",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "hostname",
+                "device",
+                "uuid",
+                "reason"
+              ]
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "Value": true
+            },
+            "renameByName": {},
+            "indexByName": {
+              "hostname": 0,
+              "device": 1,
+              "uuid": 2,
+              "reason": 3,
+              "Value": 4
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": []
+      },
+      "id": 14,
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 6
+      }
+    },
+    {
+      "type": "table",
+      "title": "Bindings",
+      "description": "Each Tang pin of each Clevis binding, and whether its Tang key is active or retired.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "clevis_binding_kid * on (url, kid) group_left (state) (0 * max by (url, kid, state) (tang_key_created_timestamp_seconds) + 1)",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "hostname",
+                "uuid",
+                "url",
+                "state",
+                "kid"
+              ]
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "Value": true
+            },
+            "renameByName": {},
+            "indexByName": {
+              "hostname": 0,
+              "uuid": 1,
+              "url": 2,
+              "state": 3,
+              "kid": 4,
+              "Value": 5
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": []
+      },
+      "id": 15,
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 24,
+        "h": 8
+      }
+    },
+    {
+      "type": "row",
+      "title": "LUKS keyslots",
+      "collapsed": false,
+      "panels": [],
+      "id": 16,
+      "gridPos": {
+        "x": 0,
+        "y": 38,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "type": "table",
+      "title": "Keyslot age",
+      "description": "Days since each keyslot got its key. exact=0: tracking started then, the key may be older.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(time() - luks_keyslot_changed_timestamp_seconds) / 86400",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "hostname",
+                "uuid",
+                "slot",
+                "kind",
+                "exact",
+                "Value"
+              ]
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true
+            },
+            "renameByName": {
+              "Value": "Days"
+            },
+            "indexByName": {
+              "hostname": 0,
+              "uuid": 1,
+              "slot": 2,
+              "kind": 3,
+              "exact": 4,
+              "Value": 5
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Days",
+            "desc": true
+          }
+        ]
+      },
+      "id": 17,
+      "gridPos": {
+        "x": 0,
+        "y": 39,
+        "w": 24,
+        "h": 8
+      }
+    }
+  ]
+}
